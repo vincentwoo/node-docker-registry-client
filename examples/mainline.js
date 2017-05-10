@@ -21,6 +21,11 @@ var read = require('read');
 
 var options = [
     {
+        names: ['help', 'h'],
+        type: 'bool',
+        help: 'Print this help and exit.'
+    },
+    {
         names: ['verbose', 'v'],
         type: 'bool',
         help: 'Verbose logging.'
@@ -34,20 +39,49 @@ var options = [
         names: ['password', 'p'],
         type: 'string',
         help: 'Basic auth password'
+    },
+    {
+        names: ['insecure', 'k'],
+        type: 'bool',
+        help: 'Allow insecure SSL connections (i.e. do not enforce SSL certs)'
+    },
+    {
+        names: ['schema', 's'],
+        type: 'number',
+        help: 'Maximum schema version to request (1 or 2, defaults to 1)'
     }
 ];
 
 var optionsNoAuth = [
     {
+        names: ['help', 'h'],
+        type: 'bool',
+        help: 'Print this help and exit.'
+    },
+    {
         names: ['verbose', 'v'],
         type: 'bool',
         help: 'Verbose logging.'
+    },
+    {
+        names: ['insecure', 'k'],
+        type: 'bool',
+        help: 'Allow insecure SSL connections (i.e. do not enforce SSL certs)'
+    },
+    {
+        names: ['schema', 's'],
+        type: 'number',
+        help: 'Maximum schema version to request (1 or 2, defaults to 1)'
     }
 ];
 
 
-function fail(cmd, err) {
-    console.error('%s: error: %s', cmd, err.message || err);
+function fail(cmd, err, opts) {
+    assert.optionalObject(opts, 'opts');
+    opts = opts || {};
+
+    var errToShow = opts.verbose ? err.stack || err : err.message || err;
+    console.error('%s: error: %s', cmd, errToShow);
     process.exit(2);
 }
 
@@ -55,9 +89,15 @@ function fail(cmd, err) {
 function mainline(config, cb) {
     assert.string(config.cmd, 'config.cmd');
     assert.optionalBool(config.excludeAuth, 'config.excludeAuth');
+    assert.optionalObject(config.options, 'config.options');
 
+    var dashOpts = (config.excludeAuth ? optionsNoAuth : options);
+    if (config.options) {
+        // Add to existing options.
+        dashOpts = dashOpts.concat(config.options);
+    }
     var parser = dashdash.createParser({
-        options: (config.excludeAuth ? optionsNoAuth : options)
+        options: dashOpts
     });
     try {
         var opts = parser.parse(process.argv);

@@ -10,12 +10,12 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
-var drc = require('../');
-var mainline = require('./mainline');
+var drc = require('../../');
+var mainline = require('../mainline');
 
 // Shared mainline with examples/foo.js to get CLI opts.
-var cmd = 'ping';
-mainline({cmd: cmd, excludeAuth: true}, function (log, parser, opts, args) {
+var cmd = 'listRepoImgs';
+mainline({cmd: cmd}, function (log, parser, opts, args) {
     var name = args[0];
     if (!name) {
         console.error('usage: node examples/v1/%s.js REPO\n' +
@@ -25,24 +25,21 @@ mainline({cmd: cmd, excludeAuth: true}, function (log, parser, opts, args) {
         process.exit(2);
     }
 
-    // The interesting stuff starts here.
-    drc.createClient({
-        name: name,
-        insecure: opts.insecure,
-        log: log
-    }, function (createErr, reg) {
-        if (createErr) {
-            mainline.fail(cmd, createErr);
-        }
-        console.log('API version: %j', reg.version);
 
-        reg.ping(function (err, status, res) {
-            reg.close();
-            if (err) {
-                mainline.fail(cmd, err);
-            }
-            console.log('status: %j', status);
-            console.log('HTTP status: %s', res.statusCode);
-        });
+    // The interesting stuff starts here.
+    var client = drc.createClientV1({
+        name: name,
+        log: log,
+        insecure: opts.insecure,
+        username: opts.username,
+        password: opts.password
     });
+    client.listRepoImgs(function (err, imgs) {
+        client.close();
+        if (err) {
+            mainline.fail(cmd, err, opts);
+        }
+        console.log(JSON.stringify(imgs, null, 4));
+    });
+
 });

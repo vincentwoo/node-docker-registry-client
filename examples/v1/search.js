@@ -17,15 +17,15 @@
  */
 
 var p = console.error;
-var drc = require('../');
-var mainline = require('./mainline');
+var drc = require('../../');
+var mainline = require('../mainline');
 
 // Shared mainline with examples/foo.js to get CLI opts.
 var cmd = 'search';
 mainline({cmd: cmd}, function (log, parser, opts, args) {
     var name = args[0];
     if (!name) {
-        console.error('usage: node examples/%s.js [INDEX/]TERM\n' +
+        console.error('usage: node examples/v1/%s.js [INDEX/]TERM\n' +
             '\n' +
             'options:\n' +
             '%s', cmd, parser.help().trimRight());
@@ -45,16 +45,17 @@ mainline({cmd: cmd}, function (log, parser, opts, args) {
     p('# index: %j', repo.index.name);
     p('# term: %j', term);
 
-    var reg = drc.createClient({
+    var client = drc.createClientV1({
         name: name,
-        agent: false,
         log: log,
+        insecure: opts.insecure,
         username: opts.username,
         password: opts.password
     });
-    reg.search({term: term}, function (err, results, res) {
+    client.search({term: term}, function (err, results, res) {
+        client.close();
         if (err) {
-            mainline.fail(cmd, err);
+            mainline.fail(cmd, err, opts);
         }
         console.log(JSON.stringify(results, null, 4));
     });

@@ -10,27 +10,36 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
-var drc = require('../');
-var mainline = require('./mainline');
+var drc = require('../../');
+var mainline = require('../mainline');
 
 // Shared mainline with examples/foo.js to get CLI opts.
-var cmd = 'pingIndex';
-mainline({cmd: cmd, excludeAuth: true}, function (log, parser, opts, args) {
+var cmd = 'listTags';
+mainline({cmd: cmd}, function (log, parser, opts, args) {
     var name = args[0];
     if (!name) {
-        console.error('usage: node examples/%s.js INDEX\n' +
+        console.error('usage: node examples/v2/%s.js REPO\n' +
             '\n' +
             'options:\n' +
             '%s', cmd, parser.help().trimRight());
         process.exit(2);
     }
 
+
     // The interesting stuff starts here.
-    drc.pingIndex({indexName: args[0], log: log}, function (err, status, res) {
-        if (err) {
-            mainline.fail(cmd, err);
-        }
-        console.log('status: %j', status);
-        console.log('HTTP status: %s', res.statusCode);
+    var client = drc.createClientV2({
+        name: name,
+        log: log,
+        insecure: opts.insecure,
+        username: opts.username,
+        password: opts.password
     });
+    client.listTags(function (err, tags) {
+        client.close();
+        if (err) {
+            mainline.fail(cmd, err, opts);
+        }
+        console.log(JSON.stringify(tags, null, 4));
+    });
+
 });

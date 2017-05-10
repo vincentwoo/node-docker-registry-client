@@ -7,27 +7,23 @@
  */
 
 /*
- * Copyright 2016, Joyent, Inc.
+ * Copyright 2016 Joyent, Inc.
  */
 
 /* BEGIN JSSTYLED */
 /*
- * Login to a Docker Registry (whether it is v1 or v2).
- *
- * There is a catch with supposed v1 support: In Docker 1.11 (Docker Remote API
- * version 1.23) they dropped including the "email" field in the "POST /auth"
- * request to the Docker Engine. This script will not prompt for email if
- * not given as an argument -- and then won't work against a v1 registry.
- * Basically: v1 is getting phased out.
+ * This shows roughly how a Docker Engine would handle the server-side of
+ * a "check auth" Remote API request:
+ *      // JSSTYLED
+ *      http://docs.docker.com/reference/api/docker_remote_api_v1.18/#check-auth-configuration
+ * to a *v2* Docker Registry API -- as is called by `docker login`.
  *
  * Usage:
- *      node examples/login.js [INDEX-NAME] [USERNAME] [PASSWORD] [EMAIL]
+ *      node examples/login.js [INDEX-NAME] [USERNAME] [PASSWORD]
  *
  * Run with TRACE=1 envvar to get trace-level logging.
  *
  * Example:
- *      # If not given, INDEX-NAME defaults to the appropriate Docker Hub
- *      # index URL.
  *      $ node examples/login.js
  *      Username: bob
  *      Password:
@@ -41,7 +37,7 @@ var format = require('util').format;
 var read = require('read');
 var vasync = require('vasync');
 
-var drc = require('../');
+var drc = require('../../');
 
 
 
@@ -76,13 +72,12 @@ var log = bunyan.createLogger({
 var indexName = process.argv[2] || 'https://index.docker.io/v1/';
 if (indexName === '-h' || indexName === '--help') {
     console.error('usage: node examples/v2/%s.js [INDEX] [USERNAME] ' +
-        '[PASSWORD] [EMAIL]', cmd);
+        '[PASSWORD]', cmd);
     process.exit(2);
 }
 
 var username = process.argv[3];
 var password = process.argv[4];
-var email = process.argv[5];
 vasync.pipeline({funcs: [
     function getUsername(_, next) {
         if (username) {
@@ -109,14 +104,13 @@ vasync.pipeline({funcs: [
         });
     },
     function doLogin(_, next) {
-        drc.login({
+        drc.loginV2({
             indexName: indexName,
             log: log,
             // TODO: insecure: insecure,
             // auth info:
             username: username,
-            password: password,
-            email: email
+            password: password
         }, function (err, result) {
             if (err) {
                 next(err);

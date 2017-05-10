@@ -10,15 +10,15 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
-var drc = require('../');
-var mainline = require('./mainline');
+var drc = require('../../');
+var mainline = require('../mainline');
 
 // Shared mainline with examples/foo.js to get CLI opts.
 var cmd = 'listRepoTags';
 mainline({cmd: cmd}, function (log, parser, opts, args) {
     var name = args[0];
     if (!name) {
-        console.error('usage: node examples/%s.js REPO\n' +
+        console.error('usage: node examples/v1/%s.js REPO\n' +
             '\n' +
             'options:\n' +
             '%s', cmd, parser.help().trimRight());
@@ -27,19 +27,19 @@ mainline({cmd: cmd}, function (log, parser, opts, args) {
 
 
     // The interesting stuff starts here.
-    var client = drc.createClient({
+    var client = drc.createClientV1({
         name: name,
-        agent: false,
         log: log,
+        insecure: opts.insecure,
         username: opts.username,
         password: opts.password
     });
     client.listRepoTags(function (err, repoTags) {
+        client.close();
         if (err) {
-            mainline.fail(cmd, err);
+            mainline.fail(cmd, err, opts);
         }
         console.log(JSON.stringify(repoTags, null, 4));
     });
-
 
 });

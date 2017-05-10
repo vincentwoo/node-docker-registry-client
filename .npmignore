@@ -8,3 +8,5 @@
 /deps
 /docker-registry-client-*.tgz
 *.layer
+*.blob
+/test/config.json
